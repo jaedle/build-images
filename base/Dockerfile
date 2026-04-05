@@ -5,6 +5,7 @@ RUN apt-get update &&  \
       curl \
       ca-certificates \
       gnupg \
+      iproute2 \
       jq \
     && \
     rm -rf /var/lib/apt/lists/*
