@@ -4,6 +4,7 @@ set -o errexit -o pipefail -o nounset
 
 DOCKERD_TIMEOUT="${DOCKERD_TIMEOUT:-60}"
 DOCKER_OPTS="${DOCKER_OPTS:-}"
+DOCKER_MIRROR="${DOCKER_MIRROR:-}"
 
 DOCKERD_PID_FILE="/tmp/docker.pid"
 DOCKERD_LOG_FILE="/tmp/docker.log"
@@ -97,6 +98,10 @@ start_docker() {
 
   if [[ "${docker_opts}" != *'--data-root'* ]] && [[ "${docker_opts}" != *'--graph'* ]]; then
     docker_opts+=' --data-root /scratch/docker'
+  fi
+
+  if [[ -n "${DOCKER_MIRROR}" ]]; then
+    docker_opts+=" --registry-mirror ${DOCKER_MIRROR}"
   fi
 
   rm -f "${DOCKERD_PID_FILE}"
