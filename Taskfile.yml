@@ -1,0 +1,23 @@
+version: "3"
+
+vars:
+  BASE_IMAGE: jaedle/build-images-base
+
+tasks:
+  world:
+    desc: Build and release all images
+    deps:
+      - base:release
+
+  base:build:
+    desc: Build base image
+    dir: base
+    cmds:
+      - docker build -t {{.BASE_IMAGE}} .
+
+  base:release:
+    desc: Build and push base image
+    deps:
+      - base:build
+    cmds:
+      - docker push {{.BASE_IMAGE}}
