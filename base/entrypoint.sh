@@ -14,6 +14,7 @@ fi
 
 if [[ -f ".mise.toml" ]] || [[ -f "mise.toml" ]]; then
   echo "[entrypoint] mise config found, running mise install"
+  mise trust --yes
   mise install
 else
   echo "[entrypoint] no mise config found, skipping mise install"
