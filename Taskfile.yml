@@ -5,6 +5,9 @@ vars:
   BASE_TAG: latest
   CONCOURSE_DIND_IMAGE: jaedle/build-images-concourse-docker-in-docker
   CONCOURSE_DIND_TAG: latest
+  GIT_SHA:
+    sh: git rev-parse --short HEAD
+  TESTING_TAG: testing-{{.GIT_SHA}}
 
 tasks:
   ci:
@@ -19,6 +22,18 @@ tasks:
       - task: ci
       - task: base:release
       - task: concourse-docker-in-docker:release
+
+  base:build-testing:
+    desc: Build base image with testing tag (testing-<git-sha>)
+    dir: base
+    cmds:
+      - docker build -t {{.BASE_IMAGE}}:{{.TESTING_TAG}} .
+
+  concourse-docker-in-docker:build-testing:
+    desc: Build concourse docker-in-docker image with testing tag
+    dir: concourse-docker-in-docker
+    cmds:
+      - docker build --build-arg BASE_IMAGE={{.BASE_IMAGE}} --build-arg BASE_TAG={{.TESTING_TAG}} -t {{.CONCOURSE_DIND_IMAGE}}:{{.TESTING_TAG}} .
 
   base:build:
     desc: Build base image

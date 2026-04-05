@@ -1,0 +1,216 @@
+resources:
+  - name: source-code
+    type: git
+    source:
+      uri: https://github.com/jaedle/build-images.git
+      branch: main
+    check_every: 10m
+
+  - name: every-2-days
+    type: time
+    source:
+      interval: 48h
+
+  - name: base-testing-image
+    type: registry-image
+    source:
+      repository: jaedle/build-images-base
+      username: ((docker-username))
+      password: ((docker-password))
+
+  - name: dind-testing-image
+    type: registry-image
+    source:
+      repository: jaedle/build-images-concourse-docker-in-docker
+      username: ((docker-username))
+      password: ((docker-password))
+
+  - name: base-release-image
+    type: registry-image
+    source:
+      repository: jaedle/build-images-base
+      tag: latest
+      username: ((docker-username))
+      password: ((docker-password))
+
+  - name: dind-release-image
+    type: registry-image
+    source:
+      repository: jaedle/build-images-concourse-docker-in-docker
+      tag: latest
+      username: ((docker-username))
+      password: ((docker-password))
+
+jobs:
+  - name: build-base
+    plan:
+      - in_parallel:
+          - get: source-code
+            trigger: true
+          - get: every-2-days
+            trigger: true
+      - task: build
+        privileged: true
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: concourse/oci-build-task
+          inputs:
+            - name: source-code
+              path: .
+          outputs:
+            - name: image
+          params:
+            CONTEXT: base
+          run:
+            path: build
+      - put: base-testing-image
+        params:
+          image: image/image.tar
+          additional_tags: source-code/.git/short_ref
+          tag_prefix: testing-
+
+  - name: build-concourse-dind
+    plan:
+      - in_parallel:
+          - get: source-code
+            trigger: true
+            passed: [build-base]
+          - get: every-2-days
+            trigger: false
+            passed: [build-base]
+          - get: base-testing-image
+            passed: [build-base]
+      - task: resolve-tag
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: alpine
+          inputs:
+            - name: source-code
+          outputs:
+            - name: build-args
+          run:
+            path: sh
+            args:
+              - -c
+              - |
+                BASE_TAG="testing-$(cat source-code/.git/short_ref)"
+                printf 'BASE_IMAGE=jaedle/build-images-base\nBASE_TAG=%s\n' "${BASE_TAG}" > build-args/args
+                cat build-args/args
+      - task: build
+        privileged: true
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: concourse/oci-build-task
+          inputs:
+            - name: source-code
+              path: .
+            - name: build-args
+          outputs:
+            - name: image
+          params:
+            CONTEXT: concourse-docker-in-docker
+            BUILD_ARGS_FILE: build-args/args
+          run:
+            path: build
+      - put: dind-testing-image
+        params:
+          image: image/image.tar
+          additional_tags: source-code/.git/short_ref
+          tag_prefix: testing-
+
+  - name: test-base
+    plan:
+      - in_parallel:
+          - get: source-code
+            trigger: true
+            passed: [build-base]
+          - get: every-2-days
+            trigger: false
+            passed: [build-base]
+          - get: base-testing-image
+            passed: [build-base]
+      - task: test
+        image: base-testing-image
+        privileged: true
+        config:
+          platform: linux
+          inputs:
+            - name: source-code
+          run:
+            path: /entrypoint.sh
+            args:
+              - |                
+                mise --version
+                jq --version
+
+  - name: test-concourse-dind
+    plan:
+      - in_parallel:
+          - get: source-code
+            trigger: true
+            passed: [build-concourse-dind]
+          - get: every-2-days
+            trigger: false
+            passed: [build-concourse-dind]
+          - get: dind-testing-image
+            passed: [build-concourse-dind]
+      - task: test
+        privileged: true
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: jaedle/build-images-concourse-docker-in-docker
+              tag: latest
+          inputs:
+            - name: source-code
+            - name: dind-testing-image
+          run:
+            path: /docker-entrypoint.sh
+            args:
+              - mise ls
+              - docker container run --rm -it hello-world
+
+  - name: release-base
+    plan:
+      - in_parallel:
+          - get: source-code
+            trigger: true
+            passed: [test-base]
+          - get: every-2-days
+            trigger: false
+            passed: [test-base]
+          - get: base-testing-image
+            passed: [test-base]
+            params:
+              format: oci
+      - put: base-release-image
+        params:
+          image: base-testing-image/image.tar
+
+  - name: release-concourse-dind
+    plan:
+      - in_parallel:
+          - get: source-code
+            trigger: true
+            passed: [test-concourse-dind]
+          - get: every-2-days
+            trigger: false
+            passed: [test-concourse-dind]
+          - get: dind-testing-image
+            passed: [test-concourse-dind]
+            params:
+              format: oci
+      - put: dind-release-image
+        params:
+          image: dind-testing-image/image.tar
