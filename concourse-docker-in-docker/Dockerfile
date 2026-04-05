@@ -15,6 +15,7 @@ RUN install -m 0755 -d /etc/apt/keyrings && \
       containerd.io \
       docker-ce \
       docker-ce-cli \
+      docker-compose-plugin \
     && \
     rm -rf /var/lib/apt/lists/*
 
