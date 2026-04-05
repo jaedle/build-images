@@ -83,7 +83,7 @@ jobs:
             trigger: false
             passed: [build-base]
           - get: base-testing-image
-            passed: [build-base]
+            passed: [release-base]
       - task: resolve-tag
         config:
           platform: linux
