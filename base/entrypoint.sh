@@ -20,4 +20,6 @@ else
   echo "[entrypoint] no mise config found, skipping mise install"
 fi
 
-exec "$@"
+for cmd in "$@"; do
+  mise exec -- bash -c "$cmd"
+done
