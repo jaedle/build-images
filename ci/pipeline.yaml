@@ -177,6 +177,8 @@ jobs:
           inputs:
             - name: source-code
             - name: dind-testing-image
+          params:
+            REGISTRY_MIRROR: https://docker-mirror.home.jaedle.de
           run:
             path: /docker-entrypoint.sh
             args:
