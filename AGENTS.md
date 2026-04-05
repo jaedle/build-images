@@ -7,6 +7,7 @@
 ## Docker images
 
 - Favor curl over wget
+- Favor bash for scripting over sh
 
 ## CI/CD Pipeline
 
