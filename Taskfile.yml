@@ -2,22 +2,28 @@ version: "3"
 
 vars:
   BASE_IMAGE: jaedle/build-images-base
+  BASE_TAG: latest
 
 tasks:
+  ci:
+    desc: Run CI validations
+    cmds:
+      - task: base:build
+
   world:
     desc: Build and release all images
-    deps:
-      - base:release
+    cmds:
+      - task: ci
+      - task: base:release
 
   base:build:
     desc: Build base image
     dir: base
     cmds:
-      - docker build -t {{.BASE_IMAGE}} .
+      - docker build -t {{.BASE_IMAGE}}:{{.BASE_TAG}} .
 
   base:release:
     desc: Build and push base image
-    deps:
-      - base:build
     cmds:
-      - docker push {{.BASE_IMAGE}}
+      - task: base:build
+      - docker push {{.BASE_IMAGE}}:{{.BASE_TAG}}
