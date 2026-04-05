@@ -13,6 +13,7 @@ RUN install -m 0755 -d /etc/apt/keyrings && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
       containerd.io \
+      docker-buildx-plugin \
       docker-ce \
       docker-ce-cli \
       docker-compose-plugin \
