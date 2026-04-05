@@ -64,6 +64,7 @@ jobs:
             - name: image
           params:
             CONTEXT: base
+            REGISTRY_MIRRORS: https://docker-mirror.home.jaedle.de
           run:
             path: build
       - put: base-testing-image
@@ -119,6 +120,7 @@ jobs:
           params:
             CONTEXT: concourse-docker-in-docker
             BUILD_ARGS_FILE: build-args/args
+            REGISTRY_MIRRORS: https://docker-mirror.home.jaedle.de
           run:
             path: build
       - put: dind-testing-image
