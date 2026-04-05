@@ -3,18 +3,22 @@ version: "3"
 vars:
   BASE_IMAGE: jaedle/build-images-base
   BASE_TAG: latest
+  CONCOURSE_DIND_IMAGE: jaedle/build-images-concourse-docker-in-docker
+  CONCOURSE_DIND_TAG: latest
 
 tasks:
   ci:
     desc: Run CI validations
     cmds:
       - task: base:build
+      - task: concourse-docker-in-docker:build
 
   world:
     desc: Build and release all images
     cmds:
       - task: ci
       - task: base:release
+      - task: concourse-docker-in-docker:release
 
   base:build:
     desc: Build base image
@@ -27,3 +31,15 @@ tasks:
     cmds:
       - task: base:build
       - docker push {{.BASE_IMAGE}}:{{.BASE_TAG}}
+
+  concourse-docker-in-docker:build:
+    desc: Build concourse docker-in-docker image
+    dir: concourse-docker-in-docker
+    cmds:
+      - docker build --build-arg BASE_IMAGE={{.BASE_IMAGE}} --build-arg BASE_TAG={{.BASE_TAG}} -t {{.CONCOURSE_DIND_IMAGE}}:{{.CONCOURSE_DIND_TAG}} .
+
+  concourse-docker-in-docker:release:
+    desc: Build and push concourse docker-in-docker image
+    cmds:
+      - task: concourse-docker-in-docker:build
+      - docker push {{.CONCOURSE_DIND_IMAGE}}:{{.CONCOURSE_DIND_TAG}}

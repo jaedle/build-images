@@ -10,6 +10,7 @@ Generic build images for my self-hosted [Concourse](https://concourse-ci.org/).
 ## Image Types
 
 - `base`: Base image with common dependencies
+- `concourse-docker-in-docker`: Concourse task image with Docker-in-Docker, built on top of `base`
 
 ## Runtime versions
 
@@ -26,6 +27,8 @@ The `base` image ships `/entrypoint.sh` which integrates with Concourse task ste
 - `WORKDIR` env var: cd into `./WORKDIR` before running commands; fails if the directory does not exist.
 - Auto-runs `mise install` if `.mise.toml` or `mise.toml` is present in the working directory.
 - Accepts arbitrary commands as args.
+
+The `concourse-docker-in-docker` image keeps the same entrypoint behavior and starts `dockerd` before running task commands. Run Concourse tasks with `privileged: true`.
 
 **Example Concourse task:**
 
@@ -47,4 +50,28 @@ run:
   args:
     - go test ./...
     - go build .
+```
+
+**Example Docker-in-Docker task:**
+
+```yaml
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: jaedle/build-images-concourse-docker-in-docker
+
+privileged: true
+
+inputs:
+  - name: source-code
+
+params:
+  WORKDIR: source-code
+
+run:
+  path: /docker-entrypoint.sh
+  args:
+    - docker version
+    - docker container run --rm -i hello-world
 ```

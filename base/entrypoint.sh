@@ -2,7 +2,7 @@
 
 set -eu -o pipefail
 
-if [[ -n "${WORKDIR}" ]]; then
+if [[ -n "${WORKDIR:-}" ]]; then
   TARGET_DIR="./${WORKDIR}"
   echo "[entrypoint] changing to directory: ${TARGET_DIR}"
   if [[ ! -d "${TARGET_DIR}" ]]; then

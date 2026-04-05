@@ -32,4 +32,4 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Publish images
         if: github.event_name != 'pull_request'
-        run: task base:release
+        run: task world
