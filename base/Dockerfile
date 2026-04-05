@@ -19,3 +19,8 @@ RUN install -m 0755 -d /etc/apt/keyrings && \
 
 COPY .mise.toml /root/.config/mise/config.toml
 RUN mise install
+
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
