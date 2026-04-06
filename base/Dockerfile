@@ -24,4 +24,11 @@ RUN mise install
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
+## Disable progress bars + colors
+
+ENV TERM=dumb
+ENV CI=true
+ENV NPM_CONFIG_PROGRESS=false
+ENV NO_COLOR=1
+
 ENTRYPOINT ["/entrypoint.sh"]

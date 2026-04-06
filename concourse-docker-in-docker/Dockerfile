@@ -23,4 +23,10 @@ RUN install -m 0755 -d /etc/apt/keyrings && \
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
+## Disable progress bars
+
+ENV DOCKER_CLI_PROGRESS=plain
+ENV COMPOSE_DOCKER_CLI_BUILD=1
+ENV COMPOSE_PROGRESS=plain
+
 ENTRYPOINT ["/docker-entrypoint.sh"]
