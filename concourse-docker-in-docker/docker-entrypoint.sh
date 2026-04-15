@@ -11,6 +11,11 @@ DOCKERD_LOG_FILE="/tmp/docker.log"
 BASE_ENTRYPOINT="/entrypoint.sh"
 BINFMT_IMAGE_ARCHIVE="/opt/binfmt/binfmt.tar"
 
+setup_buildx() {
+  echo >&2 "Creating docker-container buildx builder..."
+  docker buildx create --name multi --driver docker-container --use
+}
+
 setup_binfmt() {
   if [[ -n "${NO_BINFMT_SETUP:-}" ]]; then
     echo >&2 "Skipping binfmt setup because NO_BINFMT_SETUP is set."
@@ -195,6 +200,7 @@ fi
 start_docker
 trap stop_docker EXIT
 await_docker
+setup_buildx
 setup_binfmt
 
 "${BASE_ENTRYPOINT}" "$@"
