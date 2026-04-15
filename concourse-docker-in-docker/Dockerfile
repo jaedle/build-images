@@ -1,5 +1,16 @@
+ARG BINFMT_IMAGE=tonistiigi/binfmt:latest
 ARG BASE_IMAGE=jaedle/build-images-base
 ARG BASE_TAG=latest
+
+FROM debian:bookworm-slim AS binfmt-image
+
+ARG BINFMT_IMAGE
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates skopeo && \
+    rm -rf /var/lib/apt/lists/* && \
+    mkdir -p /opt/binfmt && \
+    skopeo copy "docker://${BINFMT_IMAGE}" "docker-archive:/opt/binfmt/binfmt.tar:${BINFMT_IMAGE}"
 
 FROM ${BASE_IMAGE}:${BASE_TAG}
 
@@ -19,6 +30,8 @@ RUN install -m 0755 -d /etc/apt/keyrings && \
       docker-compose-plugin \
     && \
     rm -rf /var/lib/apt/lists/*
+
+COPY --from=binfmt-image /opt/binfmt/binfmt.tar /opt/binfmt/binfmt.tar
 
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh

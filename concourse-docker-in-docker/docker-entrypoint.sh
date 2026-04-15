@@ -9,6 +9,25 @@ DOCKER_MIRROR="${DOCKER_MIRROR:-}"
 DOCKERD_PID_FILE="/tmp/docker.pid"
 DOCKERD_LOG_FILE="/tmp/docker.log"
 BASE_ENTRYPOINT="/entrypoint.sh"
+BINFMT_IMAGE_ARCHIVE="/opt/binfmt/binfmt.tar"
+
+setup_binfmt() {
+  if [[ -n "${NO_BINFMT_SETUP:-}" ]]; then
+    echo >&2 "Skipping binfmt setup because NO_BINFMT_SETUP is set."
+    return 0
+  fi
+
+  if [[ ! -f "${BINFMT_IMAGE_ARCHIVE}" ]]; then
+    echo >&2 "binfmt image archive not found: ${BINFMT_IMAGE_ARCHIVE}"
+    exit 1
+  fi
+
+  echo >&2 "Loading bundled binfmt image..."
+  docker image load --input "${BINFMT_IMAGE_ARCHIVE}" >/dev/null
+
+  echo >&2 "Installing binfmt handlers..."
+  docker container run --privileged --rm tonistiigi/binfmt --install all
+}
 
 sanitize_cgroups() {
   local cgroup="/sys/fs/cgroup"
@@ -100,6 +119,10 @@ start_docker() {
     docker_opts+=' --data-root /scratch/docker'
   fi
 
+  if [[ "${docker_opts}" != *'--storage-driver'* ]] && [[ "${docker_opts}" != *'-s '* ]]; then
+    docker_opts+=' --storage-driver vfs'
+  fi
+
   if [[ -n "${DOCKER_MIRROR}" ]]; then
     docker_opts+=" --registry-mirror ${DOCKER_MIRROR}"
   fi
@@ -172,5 +195,6 @@ fi
 start_docker
 trap stop_docker EXIT
 await_docker
+setup_binfmt
 
 "${BASE_ENTRYPOINT}" "$@"

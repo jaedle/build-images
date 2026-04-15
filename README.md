@@ -30,6 +30,12 @@ The `base` image ships `/entrypoint.sh` which integrates with Concourse task ste
 
 The `concourse-docker-in-docker` image keeps the same entrypoint behavior and starts `dockerd` before running task commands. Run Concourse tasks with `privileged: true`.
 
+Before user commands run, it also loads a bundled `tonistiigi/binfmt` image and executes `docker container run --privileged --rm tonistiigi/binfmt --install all` so `docker buildx` cross-compilation works by default.
+
+Set `NO_BINFMT_SETUP=1` to skip that automatic setup.
+
+`dockerd` defaults to `--storage-driver vfs` unless `DOCKER_OPTS` already sets a storage driver.
+
 **Example Concourse task:**
 
 ```yaml
@@ -44,6 +50,7 @@ inputs:
     
 params:
   WORKDIR: source-code
+  # NO_BINFMT_SETUP: 1
 
 run:
   path: /entrypoint.sh
