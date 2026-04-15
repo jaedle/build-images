@@ -1,4 +1,6 @@
 [tools]
 
+go = "1.26"
+golangci-lint = "latest"
 nodejs = "24"
 task = "latest"
