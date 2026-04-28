@@ -3,6 +3,8 @@ version: "3"
 vars:
   BASE_IMAGE: jaedle/build-images-base
   BASE_TAG: latest
+  BACKUP_IMAGE: jaedle/build-images-backup
+  BACKUP_TAG: latest
   CONCOURSE_DIND_IMAGE: jaedle/build-images-concourse-docker-in-docker
   CONCOURSE_DIND_TAG: latest
   GIT_SHA:
@@ -14,6 +16,7 @@ tasks:
     desc: Run CI validations
     cmds:
       - task: base:build
+      - task: backup:build
       - task: concourse-docker-in-docker:build
 
   world:
@@ -21,6 +24,7 @@ tasks:
     cmds:
       - task: ci
       - task: base:release
+      - task: backup:release
       - task: concourse-docker-in-docker:release
 
   base:build-testing:
@@ -35,6 +39,12 @@ tasks:
     cmds:
       - docker build --build-arg BASE_IMAGE={{.BASE_IMAGE}} --build-arg BASE_TAG={{.TESTING_TAG}} -t {{.CONCOURSE_DIND_IMAGE}}:{{.TESTING_TAG}} .
 
+  backup:build-testing:
+    desc: Build backup image with testing tag
+    dir: backup
+    cmds:
+      - docker build --build-arg BASE_IMAGE={{.BASE_IMAGE}} --build-arg BASE_TAG={{.TESTING_TAG}} -t {{.BACKUP_IMAGE}}:{{.TESTING_TAG}} .
+
   base:build:
     desc: Build base image
     dir: base
@@ -46,6 +56,18 @@ tasks:
     cmds:
       - task: base:build
       - docker push {{.BASE_IMAGE}}:{{.BASE_TAG}}
+
+  backup:build:
+    desc: Build backup image
+    dir: backup
+    cmds:
+      - docker build --build-arg BASE_IMAGE={{.BASE_IMAGE}} --build-arg BASE_TAG={{.BASE_TAG}} -t {{.BACKUP_IMAGE}}:{{.BACKUP_TAG}} .
+
+  backup:release:
+    desc: Build and push backup image
+    cmds:
+      - task: backup:build
+      - docker push {{.BACKUP_IMAGE}}:{{.BACKUP_TAG}}
 
   concourse-docker-in-docker:build:
     desc: Build concourse docker-in-docker image

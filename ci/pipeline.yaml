@@ -25,6 +25,13 @@ resources:
       username: ((docker-username))
       password: ((docker-password))
 
+  - name: backup-testing-image
+    type: registry-image
+    source:
+      repository: jaedle/build-images-backup
+      username: ((docker-username))
+      password: ((docker-password))
+
   - name: base-release-image
     type: registry-image
     source:
@@ -37,6 +44,14 @@ resources:
     type: registry-image
     source:
       repository: jaedle/build-images-concourse-docker-in-docker
+      tag: latest
+      username: ((docker-username))
+      password: ((docker-password))
+
+  - name: backup-release-image
+    type: registry-image
+    source:
+      repository: jaedle/build-images-backup
       tag: latest
       username: ((docker-username))
       password: ((docker-password))
@@ -129,6 +144,62 @@ jobs:
           additional_tags: source-code/.git/short_ref
           tag_prefix: testing-
 
+  - name: build-backup
+    plan:
+      - in_parallel:
+          - get: source-code
+            trigger: true
+            passed: [build-base]
+          - get: every-2-days
+            trigger: false
+            passed: [build-base]
+          - get: base-testing-image
+            passed: [release-base]
+      - task: resolve-tag
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: alpine
+          inputs:
+            - name: source-code
+          outputs:
+            - name: build-args
+          run:
+            path: sh
+            args:
+              - -c
+              - |
+                BASE_TAG="testing-$(cat source-code/.git/short_ref)"
+                printf 'BASE_IMAGE=jaedle/build-images-base\nBASE_TAG=%s\n' "${BASE_TAG}" > build-args/args
+                cat build-args/args
+      - task: build
+        privileged: true
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: concourse/oci-build-task
+          inputs:
+            - name: source-code
+              path: .
+            - name: build-args
+          outputs:
+            - name: image
+          params:
+            CONTEXT: backup
+            BUILD_ARGS_FILE: build-args/args
+            REGISTRY_MIRRORS: https://docker-mirror.home.jaedle.de
+          run:
+            path: build
+      - put: backup-testing-image
+        params:
+          image: image/image.tar
+          additional_tags: source-code/.git/short_ref
+          tag_prefix: testing-
+
   - name: test-base
     plan:
       - in_parallel:
@@ -185,6 +256,35 @@ jobs:
               - mise ls
               - docker container run --rm -it hello-world
 
+  - name: test-backup
+    plan:
+      - in_parallel:
+          - get: source-code
+            trigger: true
+            passed: [build-backup]
+          - get: every-2-days
+            trigger: false
+            passed: [build-backup]
+          - get: backup-testing-image
+            passed: [build-backup]
+      - task: test
+        image: backup-testing-image
+        privileged: true
+        config:
+          platform: linux
+          inputs:
+            - name: source-code
+          run:
+            path: /entrypoint.sh
+            args:
+              - |
+                mise --version
+                aws --version
+                age --version
+                which ssh
+                which gzip
+                which expect
+
   - name: release-base
     plan:
       - in_parallel:
@@ -218,3 +318,20 @@ jobs:
       - put: dind-release-image
         params:
           image: dind-testing-image/image.tar
+
+  - name: release-backup
+    plan:
+      - in_parallel:
+          - get: source-code
+            trigger: true
+            passed: [test-backup]
+          - get: every-2-days
+            trigger: false
+            passed: [test-backup]
+          - get: backup-testing-image
+            passed: [test-backup]
+            params:
+              format: oci
+      - put: backup-release-image
+        params:
+          image: backup-testing-image/image.tar

@@ -10,6 +10,7 @@ Generic build images for my self-hosted [Concourse](https://concourse-ci.org/).
 ## Image Types
 
 - `base`: Base image with common dependencies
+- `backup`: Image based on `base` for backup workloads
 - `concourse-docker-in-docker`: Concourse task image with Docker-in-Docker, built on top of `base`
 
 ## Runtime versions
