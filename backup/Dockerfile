@@ -7,7 +7,6 @@ RUN apt-get update &&  \
     apt-get install -y --no-install-recommends \
       expect \
       ssh \
-      yq \
     && \
     rm -rf /var/lib/apt/lists/*
 
