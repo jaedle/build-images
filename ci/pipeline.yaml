@@ -95,7 +95,7 @@ jobs:
             trigger: true
             passed: [build-base]
           - get: every-2-days
-            trigger: false
+            trigger: true
             passed: [build-base]
           - get: base-testing-image
             passed: [release-base]
@@ -151,7 +151,7 @@ jobs:
             trigger: true
             passed: [build-base]
           - get: every-2-days
-            trigger: false
+            trigger: true
             passed: [build-base]
           - get: base-testing-image
             passed: [release-base]
@@ -207,7 +207,7 @@ jobs:
             trigger: true
             passed: [build-base]
           - get: every-2-days
-            trigger: false
+            trigger: true
             passed: [build-base]
           - get: base-testing-image
             passed: [build-base]
@@ -232,7 +232,7 @@ jobs:
             trigger: true
             passed: [build-concourse-dind]
           - get: every-2-days
-            trigger: false
+            trigger: true
             passed: [build-concourse-dind]
           - get: dind-testing-image
             passed: [build-concourse-dind]
@@ -263,7 +263,7 @@ jobs:
             trigger: true
             passed: [build-backup]
           - get: every-2-days
-            trigger: false
+            trigger: true
             passed: [build-backup]
           - get: backup-testing-image
             passed: [build-backup]
@@ -292,7 +292,7 @@ jobs:
             trigger: true
             passed: [test-base]
           - get: every-2-days
-            trigger: false
+            trigger: true
             passed: [test-base]
           - get: base-testing-image
             passed: [test-base]
@@ -309,7 +309,7 @@ jobs:
             trigger: true
             passed: [test-concourse-dind]
           - get: every-2-days
-            trigger: false
+            trigger: true
             passed: [test-concourse-dind]
           - get: dind-testing-image
             passed: [test-concourse-dind]
@@ -326,7 +326,7 @@ jobs:
             trigger: true
             passed: [test-backup]
           - get: every-2-days
-            trigger: false
+            trigger: true
             passed: [test-backup]
           - get: backup-testing-image
             passed: [test-backup]
