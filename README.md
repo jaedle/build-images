@@ -44,7 +44,7 @@ platform: linux
 image_resource:
   type: registry-image
   source:
-    repository: jaedle/build-images-base
+    repository: `jaedle/build-images-base`
 
 inputs:
   - name: source-code

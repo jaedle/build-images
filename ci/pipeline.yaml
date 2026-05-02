@@ -224,6 +224,7 @@ jobs:
               - |                
                 mise --version
                 jq --version
+                yq --version
 
   - name: test-concourse-dind
     plan:
